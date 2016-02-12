@@ -1,0 +1,87 @@
+<div>
+    <h1>hello world</h1>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+@*<script src="~/lib/signalr/jquery.signalr.min.js"></script>*@
+<script src="~/scripts/jquery.signalr-2.2.0.js"></script>
+@*<script src="~/signalr/hubs"></script>*@
+<script src="~/lib/angular/angular.js"></script>
+
+
+<div ng-app="chatClient">
+    <div ng-controller="chatController">
+     
+        <section>
+            <ul>
+                <li ng-repeat="message in viewModel.messages track by $index">
+                    {{message.Name}}
+                    {{message.Message}}
+                </li>
+            </ul>
+        </section>
+        <section>
+            <div>
+                <label>Name</label>
+                <input ng-model="viewModel.message.name" />
+            </div>
+            <div>
+                <textarea ng-model="viewModel.message.message"></textarea>
+            </div>
+            <div>
+                <button ng-click="sendMessage()">send</button>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+
+
+ 
+    (function ($) {
+        angular.module('chatClient', [])
+        .controller('chatController', function ($scope) {
+
+
+            $scope.viewModel = {
+                message: {},
+                messages: []
+            }
+          
+
+            var connection = $.hubConnection("/signalr", { useDefaultPath: false });
+            var chatHub = connection.createHubProxy('chatHubs');
+            connection.start().done(function () {
+                console.log('connection established')
+                $scope.sendMessage();
+            })
+
+            $scope.chatHub = chatHub;
+
+            $scope.sendMessage = function () {
+
+                var message = { Name: $scope.viewModel.message.name, Message: $scope.viewModel.message.message };
+
+                $scope.chatHub.invoke('sendMessage', message);
+
+                $scope.viewModel.message.message = '';
+
+            }
+
+
+            $scope.chatHub.on('getMessage', function (message) {
+                console.log('message recieved', message);
+
+                $scope.viewModel.messages.push(message);
+
+                $scope.$apply();
+            })
+
+            
+
+        })
+    })($);
+</script>
+
+
